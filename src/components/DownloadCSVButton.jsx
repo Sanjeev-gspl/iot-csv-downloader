@@ -21,7 +21,7 @@ export default function DownloadCSVButton({ apiUrl, deviceId, startTime, endTime
         }
       });
       headersSet.add("deviceId");
-      headersSet.add("timestamp");
+      // headersSet.add("timestamp");
 
       const headers = Array.from(headersSet);
 
@@ -30,7 +30,7 @@ export default function DownloadCSVButton({ apiUrl, deviceId, startTime, endTime
       data.items.forEach(item => {
         const row = headers.map(h => {
           if (h === "deviceId") return item.deviceId || "";
-          if (h=="timestamp") return item.timestamp || "";
+          // if (h=="timestamp") return item.timestamp || "";
           return item.payload[h] !== undefined ? item.payload[h] : "";
         });
         csvRows.push(row.join(","));
