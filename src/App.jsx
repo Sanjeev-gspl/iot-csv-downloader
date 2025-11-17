@@ -3,7 +3,7 @@ import React, { useState } from "react";
 import DownloadCSVButton from "./components/DownloadCSVButton";
 
 export default function App() {
-  const [deviceId, setDeviceId] = useState("raspi_modbus_01");
+  const [deviceId, setDeviceId] = useState("esp32-01");
   const [start, setStart] = useState("");
   const [end, setEnd] = useState("");
 
