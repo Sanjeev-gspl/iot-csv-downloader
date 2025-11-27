@@ -396,6 +396,171 @@
 // }
 
 
+// import React, { useState } from "react";
+// import IoTCharts from "./components/IoTChart";
+// import DownloadCSVButton from "./components/DownloadCSVButton";
+
+// export default function App() {
+//   const deviceId = "raspi_modbus_01";
+//   const apiUrl = "https://e2jxfl3rf2.execute-api.ap-south-1.amazonaws.com/GetIOTData";
+
+//   // ---------------- GRAPH INPUTS ----------------
+//   const [graphStart, setGraphStart] = useState("");
+//   const [graphEnd, setGraphEnd] = useState("");
+
+//   const [chartStartTime, setChartStartTime] = useState(Date.now() - 3600 * 1000);
+//   const [chartEndTime, setChartEndTime] = useState(Date.now());
+
+//   const [selectedGroup, setSelectedGroup] = useState("voltage");
+//   const [loading, setLoading] = useState(false);
+
+//   const handleFetchGraphs = () => {
+//     setLoading(true);
+
+//     const s = graphStart ? new Date(`${graphStart}T00:00:00`).getTime() : Date.now() - 3600 * 1000;
+//     const e = graphEnd ? new Date(`${graphEnd}T23:59:59`).getTime() : Date.now();
+
+//     setChartStartTime(s);
+//     setChartEndTime(e);
+//   };
+
+//   const handleGraphLoadComplete = () => {
+//     setLoading(false);
+//   };
+
+//   // ---------------- CSV INPUTS ----------------
+//   const [csvStart, setCsvStart] = useState("");
+//   const [csvEnd, setCsvEnd] = useState("");
+
+//   const csvStartTime = csvStart
+//     ? new Date(`${csvStart}T00:00:00`).getTime()
+//     : Date.now() - 24 * 3600 * 1000;
+
+//   const csvEndTime = csvEnd
+//     ? new Date(`${csvEnd}T23:59:59`).getTime()
+//     : Date.now();
+
+//   return (
+//     <div className="min-h-screen w-full bg-gray-50 flex flex-col items-center py-10">
+      
+//       <h1 className="text-3xl font mb-8 text-gray-800">Ruhrpumpen Data</h1>
+
+//       {/* ---------------- GRAPH CONTROL PANEL ---------------- */}
+//       <div className="w-full max-w-4xl p-6 bg-white shadow-lg rounded-xl mb-10">
+//         <h2 className="text-xl font-semibold mb-4">Graph Controls</h2>
+
+//         {/* <div className="flex flex-wrap gap-6"> */}
+//         <div className="flex flex-wrap gap-6 items-end justify-center text-center w-full">
+          
+//           {/* Graph Start */}
+//           {/* <div className="flex flex-col">
+//             <label className="font-medium mb-1 text-sm text-gray-600">Start Date</label>
+//             <input
+//               type="date"
+//               className="border border-gray-300 rounded p-2"
+//               value={graphStart}
+//               onChange={(e) => setGraphStart(e.target.value)}
+//             />
+//           </div> */}
+
+//           {/* Graph End */}
+//           {/* <div className="flex flex-col">
+//             <label className="font-medium mb-1 text-sm text-gray-600">End Date</label>
+//             <input
+//               type="date"
+//               className="border border-gray-300 rounded p-2"
+//               value={graphEnd}
+//               onChange={(e) => setGraphEnd(e.target.value)}
+//             />
+//           </div> */}
+
+//           {/* Variable Selector */}
+//           <div className="flex flex-col">
+//             <label className="font-medium mb-1 text-sm text-gray-600">Select Graph</label>
+//             <select
+//               className="border border-gray-300 rounded p-2"
+//               value={selectedGroup}
+//               onChange={(e) => setSelectedGroup(e.target.value)}
+//             >
+//               <option value="voltage">Voltage</option>
+//               <option value="current">Current</option>
+//               <option value="power">Power 3-Phase</option>
+//               <option value="power_total">Power Total</option>
+//               <option value="pf">Power Factor</option>
+//               <option value="pf_total">PF Total</option>
+//               <option value="frequency">Frequency</option>
+//             </select>
+//           </div>
+
+//           {/* FETCH BUTTON */}
+//           {/* <button
+//             onClick={handleFetchGraphs}
+//             disabled={loading}
+//             className={`font-bold py-2 px-6 rounded text-white ${
+//               loading ? "bg-gray-400" : "bg-blue-600 hover:bg-blue-700"
+//             }`}
+//           >
+//             {loading ? "Loading..." : "Fetch"}
+//           </button> */}
+//         </div>
+//       </div>
+
+//       {/* ---------------- CHART ---------------- */}
+//       <div className="w-full max-w-5xl px-4">
+//         <IoTCharts
+//           apiUrl={apiUrl}
+//           deviceId={deviceId}
+//           startTime={chartStartTime}
+//           endTime={chartEndTime}
+//           selectedGroup={selectedGroup}
+//           onLoadingComplete={handleGraphLoadComplete}
+//         />
+//       </div>
+
+//       {/* ---------------- CSV DOWNLOAD PANEL ---------------- */}
+//       <div className="w-full max-w-4xl p-6 bg-white shadow-lg rounded-xl mt-10">
+//         <h2 className="text-xl font-semibold mb-4">Download CSV</h2>
+
+//         <div className="flex flex-wrap gap-6 items-end justify-center text-center w-full">
+
+
+//           {/* CSV Start */}
+//           <div className="flex flex-col">
+//             <label className="font-medium mb-1 text-sm text-gray-600">Start Date</label>
+//             <input
+//               type="date"
+//               className="border border-gray-300 rounded p-2"
+//               value={csvStart}
+//               onChange={(e) => setCsvStart(e.target.value)}
+//             />
+//           </div>
+
+//           {/* CSV End */}
+//           <div className="flex flex-col">
+//             <label className="font-medium mb-1 text-sm text-gray-600">End Date</label>
+//             <input
+//               type="date"
+//               className="border border-gray-300 rounded p-2"
+//               value={csvEnd}
+//               onChange={(e) => setCsvEnd(e.target.value)}
+//             />
+//           </div>
+
+//           {/* DOWNLOAD BUTTON */}
+//           <DownloadCSVButton
+//             apiUrl={apiUrl}
+//             deviceId={deviceId}
+//             startTime={csvStartTime}
+//             endTime={csvEndTime}
+//           />
+//         </div>
+//       </div>
+
+//     </div>
+//   );
+// }
+
+
 import React, { useState } from "react";
 import IoTCharts from "./components/IoTChart";
 import DownloadCSVButton from "./components/DownloadCSVButton";
@@ -405,27 +570,15 @@ export default function App() {
   const apiUrl = "https://e2jxfl3rf2.execute-api.ap-south-1.amazonaws.com/GetIOTData";
 
   // ---------------- GRAPH INPUTS ----------------
-  const [graphStart, setGraphStart] = useState("");
-  const [graphEnd, setGraphEnd] = useState("");
-
   const [chartStartTime, setChartStartTime] = useState(Date.now() - 3600 * 1000);
   const [chartEndTime, setChartEndTime] = useState(Date.now());
 
   const [selectedGroup, setSelectedGroup] = useState("voltage");
-  const [loading, setLoading] = useState(false);
 
-  const handleFetchGraphs = () => {
-    setLoading(true);
-
-    const s = graphStart ? new Date(`${graphStart}T00:00:00`).getTime() : Date.now() - 3600 * 1000;
-    const e = graphEnd ? new Date(`${graphEnd}T23:59:59`).getTime() : Date.now();
-
-    setChartStartTime(s);
-    setChartEndTime(e);
-  };
-
-  const handleGraphLoadComplete = () => {
-    setLoading(false);
+  // ✅ Resolution helper (NEW)
+  const getResolution = (start, end) => {
+    const diff = end - start;
+    return diff <= 15 * 60 * 1000 ? "raw" : "1m";
   };
 
   // ---------------- CSV INPUTS ----------------
@@ -440,43 +593,23 @@ export default function App() {
     ? new Date(`${csvEnd}T23:59:59`).getTime()
     : Date.now();
 
+  // ✅ CSV resolution (NEW)
+  const csvResolution = getResolution(csvStartTime, csvEndTime);
+
   return (
     <div className="min-h-screen w-full bg-gray-50 flex flex-col items-center py-10">
-      
-      <h1 className="text-3xl font mb-8 text-gray-800">RuhrPumpen Data</h1>
 
-      {/* ---------------- GRAPH CONTROL PANEL ---------------- */}
+      <h1 className="text-3xl font mb-8 text-gray-800">Ruhrpumpen Data</h1>
+
+      {/* ---------------- GRAPH CONTROLS ---------------- */}
       <div className="w-full max-w-4xl p-6 bg-white shadow-lg rounded-xl mb-10">
         <h2 className="text-xl font-semibold mb-4">Graph Controls</h2>
 
-        {/* <div className="flex flex-wrap gap-6"> */}
         <div className="flex flex-wrap gap-6 items-end justify-center text-center w-full">
-          
-          {/* Graph Start */}
-          {/* <div className="flex flex-col">
-            <label className="font-medium mb-1 text-sm text-gray-600">Start Date</label>
-            <input
-              type="date"
-              className="border border-gray-300 rounded p-2"
-              value={graphStart}
-              onChange={(e) => setGraphStart(e.target.value)}
-            />
-          </div> */}
-
-          {/* Graph End */}
-          {/* <div className="flex flex-col">
-            <label className="font-medium mb-1 text-sm text-gray-600">End Date</label>
-            <input
-              type="date"
-              className="border border-gray-300 rounded p-2"
-              value={graphEnd}
-              onChange={(e) => setGraphEnd(e.target.value)}
-            />
-          </div> */}
-
-          {/* Variable Selector */}
           <div className="flex flex-col">
-            <label className="font-medium mb-1 text-sm text-gray-600">Select Graph</label>
+            <label className="font-medium mb-1 text-sm text-gray-600">
+              Select Graph
+            </label>
             <select
               className="border border-gray-300 rounded p-2"
               value={selectedGroup}
@@ -491,17 +624,6 @@ export default function App() {
               <option value="frequency">Frequency</option>
             </select>
           </div>
-
-          {/* FETCH BUTTON */}
-          {/* <button
-            onClick={handleFetchGraphs}
-            disabled={loading}
-            className={`font-bold py-2 px-6 rounded text-white ${
-              loading ? "bg-gray-400" : "bg-blue-600 hover:bg-blue-700"
-            }`}
-          >
-            {loading ? "Loading..." : "Fetch"}
-          </button> */}
         </div>
       </div>
 
@@ -513,20 +635,18 @@ export default function App() {
           startTime={chartStartTime}
           endTime={chartEndTime}
           selectedGroup={selectedGroup}
-          onLoadingComplete={handleGraphLoadComplete}
         />
       </div>
 
-      {/* ---------------- CSV DOWNLOAD PANEL ---------------- */}
+      {/* ---------------- CSV DOWNLOAD ---------------- */}
       <div className="w-full max-w-4xl p-6 bg-white shadow-lg rounded-xl mt-10">
         <h2 className="text-xl font-semibold mb-4">Download CSV</h2>
 
         <div className="flex flex-wrap gap-6 items-end justify-center text-center w-full">
-
-
-          {/* CSV Start */}
           <div className="flex flex-col">
-            <label className="font-medium mb-1 text-sm text-gray-600">Start Date</label>
+            <label className="font-medium mb-1 text-sm text-gray-600">
+              Start Date
+            </label>
             <input
               type="date"
               className="border border-gray-300 rounded p-2"
@@ -535,9 +655,10 @@ export default function App() {
             />
           </div>
 
-          {/* CSV End */}
           <div className="flex flex-col">
-            <label className="font-medium mb-1 text-sm text-gray-600">End Date</label>
+            <label className="font-medium mb-1 text-sm text-gray-600">
+              End Date
+            </label>
             <input
               type="date"
               className="border border-gray-300 rounded p-2"
@@ -546,16 +667,16 @@ export default function App() {
             />
           </div>
 
-          {/* DOWNLOAD BUTTON */}
+          {/* ✅ ONLY change here: resolution added */}
           <DownloadCSVButton
             apiUrl={apiUrl}
             deviceId={deviceId}
             startTime={csvStartTime}
             endTime={csvEndTime}
+            resolution={csvResolution}
           />
         </div>
       </div>
-
     </div>
   );
 }
