@@ -561,122 +561,316 @@
 // }
 
 
+// import React, { useState } from "react";
+// import IoTCharts from "./components/IoTChart";
+// import DownloadCSVButton from "./components/DownloadCSVButton";
+
+// export default function App() {
+//   const deviceId = "raspi_modbus_01";
+//   const apiUrl = "https://e2jxfl3rf2.execute-api.ap-south-1.amazonaws.com/GetIOTData";
+
+//   // ---------------- GRAPH INPUTS ----------------
+//   const [chartStartTime, setChartStartTime] = useState(Date.now() - 3600 * 1000);
+//   const [chartEndTime, setChartEndTime] = useState(Date.now());
+
+//   const [selectedGroup, setSelectedGroup] = useState("voltage");
+
+//   // ✅ Resolution helper (NEW)
+//   const getResolution = (start, end) => {
+//     const diff = end - start;
+//     return diff <= 15 * 60 * 1000 ? "raw" : "1m";
+//   };
+
+//   // ---------------- CSV INPUTS ----------------
+//   const [csvStart, setCsvStart] = useState("");
+//   const [csvEnd, setCsvEnd] = useState("");
+
+//   const csvStartTime = csvStart
+//     ? new Date(`${csvStart}T00:00:00`).getTime()
+//     : Date.now() - 24 * 3600 * 1000;
+
+//   const csvEndTime = csvEnd
+//     ? new Date(`${csvEnd}T23:59:59`).getTime()
+//     : Date.now();
+
+//   // ✅ CSV resolution (NEW)
+//   const csvResolution = getResolution(csvStartTime, csvEndTime);
+
+//   return (
+//     <div className="min-h-screen w-full bg-gray-50 flex flex-col items-center py-10">
+
+//       <h1 className="text-3xl font mb-8 text-gray-800">Ruhrpumpen Data</h1>
+
+//       {/* ---------------- GRAPH CONTROLS ---------------- */}
+//       <div className="w-full max-w-4xl p-6 bg-white shadow-lg rounded-xl mb-10">
+//         <h2 className="text-xl font-semibold mb-4">Graph Controls</h2>
+
+//         <div className="flex flex-wrap gap-6 items-end justify-center text-center w-full">
+//           <div className="flex flex-col">
+//             <label className="font-medium mb-1 text-sm text-gray-600">
+//               Select Graph
+//             </label>
+//             <select
+//               className="border border-gray-300 rounded p-2"
+//               value={selectedGroup}
+//               onChange={(e) => setSelectedGroup(e.target.value)}
+//             >
+//               <option value="voltage">Voltage</option>
+//               <option value="current">Current</option>
+//               <option value="power">Power 3-Phase</option>
+//               <option value="power_total">Power Total</option>
+//               <option value="pf">Power Factor</option>
+//               <option value="pf_total">PF Total</option>
+//               <option value="frequency">Frequency</option>
+//             </select>
+//           </div>
+//         </div>
+//       </div>
+
+//       {/* ---------------- CHART ---------------- */}
+//       <div className="w-full max-w-5xl px-4">
+//         <IoTCharts
+//           apiUrl={apiUrl}
+//           deviceId={deviceId}
+//           startTime={chartStartTime}
+//           endTime={chartEndTime}
+//           selectedGroup={selectedGroup}
+//           resolution={getResolution(chartStartTime, chartEndTime)}
+//         />
+
+//       </div>
+
+//       {/* ---------------- CSV DOWNLOAD ---------------- */}
+//       <div className="w-full max-w-4xl p-6 bg-white shadow-lg rounded-xl mt-10">
+//         <h2 className="text-xl font-semibold mb-4">Download CSV</h2>
+
+//         <div className="flex flex-wrap gap-6 items-end justify-center text-center w-full">
+//           <div className="flex flex-col">
+//             <label className="font-medium mb-1 text-sm text-gray-600">
+//               Start Date
+//             </label>
+//             <input
+//               type="date"
+//               className="border border-gray-300 rounded p-2"
+//               value={csvStart}
+//               onChange={(e) => setCsvStart(e.target.value)}
+//             />
+//           </div>
+
+//           <div className="flex flex-col">
+//             <label className="font-medium mb-1 text-sm text-gray-600">
+//               End Date
+//             </label>
+//             <input
+//               type="date"
+//               className="border border-gray-300 rounded p-2"
+//               value={csvEnd}
+//               onChange={(e) => setCsvEnd(e.target.value)}
+//             />
+//           </div>
+
+//           {/* ✅ ONLY change here: resolution added */}
+//           <DownloadCSVButton
+//             apiUrl={apiUrl}
+//             deviceId={deviceId}
+//             startTime={csvStartTime}
+//             endTime={csvEndTime}
+//             resolution={csvResolution}
+//           />
+//         </div>
+//       </div>
+//     </div>
+//   );
+// }
+
 import React, { useState } from "react";
 import IoTCharts from "./components/IoTChart";
 import DownloadCSVButton from "./components/DownloadCSVButton";
+
+/* ✅ Force IST date → epoch */
+const istTime = (dateStr, isEnd = false) => {
+  const t = isEnd ? "23:59:59" : "00:00:00";
+  return new Date(`${dateStr}T${t}+05:30`).getTime();
+};
 
 export default function App() {
   const deviceId = "raspi_modbus_01";
   const apiUrl = "https://e2jxfl3rf2.execute-api.ap-south-1.amazonaws.com/GetIOTData";
 
-  // ---------------- GRAPH INPUTS ----------------
-  const [chartStartTime, setChartStartTime] = useState(Date.now() - 3600 * 1000);
-  const [chartEndTime, setChartEndTime] = useState(Date.now());
+  /* ----------- GRAPH RANGE ----------- */
+  const today = new Date().toISOString().slice(0, 10);
+  const yesterday = new Date(Date.now() - 86400000).toISOString().slice(0, 10);
 
+  const [startDate, setStartDate] = useState(yesterday);
+  const [endDate, setEndDate] = useState(yesterday);
+
+  const startTime = istTime(startDate);
+  const endTime = istTime(endDate, true);
+
+  /* ----------- GRAPH TYPE ----------- */
   const [selectedGroup, setSelectedGroup] = useState("voltage");
 
-  // ✅ Resolution helper (NEW)
-  const getResolution = (start, end) => {
-    const diff = end - start;
-    return diff <= 15 * 60 * 1000 ? "raw" : "1m";
-  };
+  /* ----------- RESOLUTION ----------- */
+  const getResolution = (s, e) => (e - s <= 15 * 60 * 1000 ? "raw" : "1m");
+  const resolution = getResolution(startTime, endTime);
 
-  // ---------------- CSV INPUTS ----------------
-  const [csvStart, setCsvStart] = useState("");
-  const [csvEnd, setCsvEnd] = useState("");
+  /* ----------- CSV RANGE ----------- */
+  const [csvStart, setCsvStart] = useState(yesterday);
+  const [csvEnd, setCsvEnd] = useState(yesterday);
 
-  const csvStartTime = csvStart
-    ? new Date(`${csvStart}T00:00:00`).getTime()
-    : Date.now() - 24 * 3600 * 1000;
-
-  const csvEndTime = csvEnd
-    ? new Date(`${csvEnd}T23:59:59`).getTime()
-    : Date.now();
-
-  // ✅ CSV resolution (NEW)
+  const csvStartTime = istTime(csvStart);
+  const csvEndTime = istTime(csvEnd, true);
   const csvResolution = getResolution(csvStartTime, csvEndTime);
 
   return (
-    <div className="min-h-screen w-full bg-gray-50 flex flex-col items-center py-10">
-
-      <h1 className="text-3xl font mb-8 text-gray-800">Ruhrpumpen Data</h1>
-
-      {/* ---------------- GRAPH CONTROLS ---------------- */}
-      <div className="w-full max-w-4xl p-6 bg-white shadow-lg rounded-xl mb-10">
-        <h2 className="text-xl font-semibold mb-4">Graph Controls</h2>
-
-        <div className="flex flex-wrap gap-6 items-end justify-center text-center w-full">
-          <div className="flex flex-col">
-            <label className="font-medium mb-1 text-sm text-gray-600">
-              Select Graph
-            </label>
-            <select
-              className="border border-gray-300 rounded p-2"
-              value={selectedGroup}
-              onChange={(e) => setSelectedGroup(e.target.value)}
-            >
-              <option value="voltage">Voltage</option>
-              <option value="current">Current</option>
-              <option value="power">Power 3-Phase</option>
-              <option value="power_total">Power Total</option>
-              <option value="pf">Power Factor</option>
-              <option value="pf_total">PF Total</option>
-              <option value="frequency">Frequency</option>
-            </select>
+    <div className="min-h-screen bg-slate-50 font-sans text-slate-800">
+      {/* 🟢 NAVBAR */}
+      <nav className="bg-white border-b border-slate-200 sticky top-0 z-20 shadow-sm">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between h-16 items-center">
+            <div className="flex items-center gap-3">
+              {/* Icon Placeholder */}
+              <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center shadow-blue-200 shadow-lg">
+                <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
+              </div>
+              <h1 className="text-xl font-bold tracking-tight text-slate-900">
+                Ruhrpumpen <span className="text-blue-600">IoT</span>
+              </h1>
+            </div>
+            <div className="text-xs font-medium text-slate-500 bg-slate-100 px-3 py-1 rounded-full border border-slate-200">
+              Device: {deviceId}
+            </div>
           </div>
         </div>
-      </div>
+      </nav>
 
-      {/* ---------------- CHART ---------------- */}
-      <div className="w-full max-w-5xl px-4">
-        <IoTCharts
-          apiUrl={apiUrl}
-          deviceId={deviceId}
-          startTime={chartStartTime}
-          endTime={chartEndTime}
-          selectedGroup={selectedGroup}
-        />
-      </div>
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+        
+        {/* 📊 SECTION 1: VISUALIZATION */}
+        <section>
+          <div className="bg-white rounded-2xl shadow-xl shadow-slate-200/60 overflow-hidden border border-slate-100">
+            
+            {/* Toolbar */}
+            <div className="bg-slate-50/50 border-b border-slate-100 p-6">
+              <div className="flex flex-col sm:flex-row gap-6 items-end justify-between">
+                
+                <div className="flex flex-wrap gap-4 w-full sm:w-auto">
+                   {/* Date Inputs Group */}
+                   <div className="flex gap-4">
+                      <div className="flex flex-col gap-1.5">
+                        <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Start Date</label>
+                        <input
+                          type="date"
+                          value={startDate}
+                          onChange={(e) => setStartDate(e.target.value)}
+                          className="bg-white border border-slate-300 text-slate-700 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 shadow-sm transition-all hover:border-blue-400"
+                        />
+                      </div>
+                      <div className="flex flex-col gap-1.5">
+                        <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider">End Date</label>
+                        <input
+                          type="date"
+                          value={endDate}
+                          onChange={(e) => setEndDate(e.target.value)}
+                          className="bg-white border border-slate-300 text-slate-700 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 shadow-sm transition-all hover:border-blue-400"
+                        />
+                      </div>
+                   </div>
 
-      {/* ---------------- CSV DOWNLOAD ---------------- */}
-      <div className="w-full max-w-4xl p-6 bg-white shadow-lg rounded-xl mt-10">
-        <h2 className="text-xl font-semibold mb-4">Download CSV</h2>
+                   {/* Metric Select */}
+                   <div className="flex flex-col gap-1.5 flex-grow sm:flex-grow-0 sm:min-w-[200px]">
+                      <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Metric</label>
+                      <select
+                        value={selectedGroup}
+                        onChange={(e) => setSelectedGroup(e.target.value)}
+                        className="bg-white border border-slate-300 text-slate-700 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 shadow-sm cursor-pointer hover:border-blue-400"
+                      >
+                        <option value="voltage">⚡ Voltage (V)</option>
+                        <option value="current">🔌 Current (A)</option>
+                        <option value="power">🏭 Power (3-Phase)</option>
+                        <option value="power_total">📊 Total Power</option>
+                        <option value="pf">📉 Power Factor</option>
+                        <option value="pf_total">📉 PF Total</option>
+                        <option value="frequency">〰 Frequency (Hz)</option>
+                      </select>
+                   </div>
+                </div>
 
-        <div className="flex flex-wrap gap-6 items-end justify-center text-center w-full">
-          <div className="flex flex-col">
-            <label className="font-medium mb-1 text-sm text-gray-600">
-              Start Date
-            </label>
-            <input
-              type="date"
-              className="border border-gray-300 rounded p-2"
-              value={csvStart}
-              onChange={(e) => setCsvStart(e.target.value)}
-            />
+                {/* Resolution Badge */}
+                <div className="hidden sm:block">
+                   <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium border ${
+                     resolution === 'raw' 
+                     ? 'bg-purple-50 text-purple-700 border-purple-200' 
+                     : 'bg-green-50 text-green-700 border-green-200'
+                   }`}>
+                     Resolution: {resolution === 'raw' ? 'High Precision' : '1 Minute Avg'}
+                   </span>
+                </div>
+              </div>
+            </div>
+
+            {/* Chart Area */}
+            <div className="p-6 min-h-[450px]">
+              <IoTCharts
+                apiUrl={apiUrl}
+                deviceId={deviceId}
+                startTime={startTime}
+                endTime={endTime}
+                resolution={resolution}
+                selectedGroup={selectedGroup}
+              />
+            </div>
           </div>
+        </section>
 
-          <div className="flex flex-col">
-            <label className="font-medium mb-1 text-sm text-gray-600">
-              End Date
-            </label>
-            <input
-              type="date"
-              className="border border-gray-300 rounded p-2"
-              value={csvEnd}
-              onChange={(e) => setCsvEnd(e.target.value)}
-            />
-          </div>
+        {/* 📥 SECTION 2: EXPORT AREA */}
+        <section className="bg-slate-900 rounded-2xl p-6 text-white shadow-2xl relative overflow-hidden">
+           {/* Background Decoration */}
+           <div className="absolute top-0 right-0 -mr-10 -mt-10 w-64 h-64 bg-blue-600 rounded-full blur-3xl opacity-20"></div>
 
-          {/* ✅ ONLY change here: resolution added */}
-          <DownloadCSVButton
-            apiUrl={apiUrl}
-            deviceId={deviceId}
-            startTime={csvStartTime}
-            endTime={csvEndTime}
-            resolution={csvResolution}
-          />
-        </div>
-      </div>
+           <div className="relative z-10 flex flex-col md:flex-row items-center justify-between gap-8">
+              <div className="max-w-md">
+                <h3 className="text-xl font-bold mb-2">Export Data</h3>
+                <p className="text-slate-400 text-sm">Download historical data for offline analysis. Select a range to generate a CSV report.</p>
+              </div>
+
+              <div className="flex flex-col sm:flex-row gap-4 items-end bg-slate-800/50 p-4 rounded-xl border border-slate-700">
+                 <div className="flex gap-4">
+                    <div>
+                      <label className="block mb-1 text-xs text-slate-400">From</label>
+                      <input
+                        type="date"
+                        value={csvStart}
+                        onChange={(e) => setCsvStart(e.target.value)}
+                        className="bg-slate-700 border-slate-600 text-white text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2"
+                      />
+                    </div>
+                    <div>
+                      <label className="block mb-1 text-xs text-slate-400">To</label>
+                      <input
+                        type="date"
+                        value={csvEnd}
+                        onChange={(e) => setCsvEnd(e.target.value)}
+                        className="bg-slate-700 border-slate-600 text-white text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2"
+                      />
+                    </div>
+                 </div>
+                 
+                 {/* Wrapper for the CSV Button to ensure it fits layout */}
+                 <div className="h-10">
+                    <DownloadCSVButton
+                      apiUrl={apiUrl}
+                      deviceId={deviceId}
+                      startTime={csvStartTime}
+                      endTime={csvEndTime}
+                      resolution={csvResolution}
+                    />
+                 </div>
+              </div>
+           </div>
+        </section>
+
+      </main>
     </div>
   );
 }
