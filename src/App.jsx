@@ -875,6 +875,460 @@
 //   );
 // }
 
+// import React, { useState } from "react";
+// import IoTCharts from "./components/IoTChart";
+// import DownloadCSVButton from "./components/DownloadCSVButton";
+
+// /* ✅ Force IST date → epoch */
+// const istTime = (dateStr, isEnd = false) => {
+//   const t = isEnd ? "23:59:59" : "00:00:00";
+//   return new Date(`${dateStr}T${t}+05:30`).getTime();
+// };
+
+// export default function App() {
+//   const deviceId = "raspi_modbus_01";
+//   const apiUrl = "https://e2jxfl3rf2.execute-api.ap-south-1.amazonaws.com/GetIOTData";
+
+//   /* ----------- GRAPH RANGE ----------- */
+//   const today = new Date().toISOString().slice(0, 10);
+//   // Default to Yesterday to ensure full data visibility initially
+//   const yesterday = new Date(Date.now() - 86400000).toISOString().slice(0, 10);
+
+//   const [startDate, setStartDate] = useState(yesterday);
+//   const [endDate, setEndDate] = useState(yesterday);
+
+//   const startTime = istTime(startDate);
+//   const endTime = istTime(endDate, true);
+
+//   /* ----------- GRAPH TYPE ----------- */
+//   const [selectedGroup, setSelectedGroup] = useState("voltage");
+
+//   /* ----------- RESOLUTION ----------- */
+//   const getResolution = (s, e) => (e - s <= 15 * 60 * 1000 ? "raw" : "1m");
+//   const resolution = getResolution(startTime, endTime);
+
+//   /* ----------- CSV RANGE ----------- */
+//   const [csvStart, setCsvStart] = useState(yesterday);
+//   const [csvEnd, setCsvEnd] = useState(yesterday);
+
+//   const csvStartTime = istTime(csvStart);
+//   const csvEndTime = istTime(csvEnd, true);
+//   const csvResolution = getResolution(csvStartTime, csvEndTime);
+
+//   return (
+//     <div className="min-h-screen bg-slate-50 font-sans text-slate-800">
+//       {/* 🟢 NAVBAR */}
+//       <nav className="bg-white border-b border-slate-200 sticky top-0 z-20 shadow-sm">
+//         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+//           <div className="flex justify-between h-16 items-center">
+//             <div className="flex items-center gap-3">
+//               <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center shadow-blue-200 shadow-lg">
+//                 <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
+//               </div>
+//               <h1 className="text-xl font-bold tracking-tight text-slate-900">
+//                 Ruhrpumpen <span className="text-blue-600">IoT</span>
+//               </h1>
+//             </div>
+//             <div className="text-xs font-medium text-slate-500 bg-slate-100 px-3 py-1 rounded-full border border-slate-200">
+//               {deviceId}
+//             </div>
+//           </div>
+//         </div>
+//       </nav>
+
+//       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+        
+//         {/* 📊 SECTION 1: VISUALIZATION */}
+//         <section className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+//             {/* Toolbar */}
+//             <div className="bg-slate-50/80 border-b border-slate-200 p-6">
+//               <div className="flex flex-col md:flex-row gap-6 items-end justify-between">
+//                 <div className="flex flex-wrap gap-4 w-full">
+//                    <div className="flex flex-col gap-1">
+//                       <label className="text-xs font-bold text-slate-500 uppercase">Start Date</label>
+//                       <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} className="input-field" />
+//                    </div>
+//                    <div className="flex flex-col gap-1">
+//                       <label className="text-xs font-bold text-slate-500 uppercase">End Date</label>
+//                       <input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} className="input-field" />
+//                    </div>
+//                    <div className="flex flex-col gap-1 flex-grow md:flex-grow-0">
+//                       <label className="text-xs font-bold text-slate-500 uppercase">Metric</label>
+//                       <select value={selectedGroup} onChange={(e) => setSelectedGroup(e.target.value)} className="input-field min-w-[220px]">
+//                         <option value="voltage">⚡ Voltage (V)</option>
+//                         <option value="current">🔌 Current (A)</option>
+//                         <option value="power">🏭 Power (3-Phase)</option>
+//                         <option value="power_total">📊 Total Power</option>
+//                         <option value="pf">📉 Power Factor</option>
+//                         <option value='pf_total'>📉 PF Total</option>
+//                         <option value="frequency">〰 Frequency (Hz)</option>
+                        
+//                         {/* ✅ NEW OPTION FOR ENERGY */}
+//                         <option value="energy_daily">🔋 Daily Energy (kWh)</option>
+//                       </select>
+//                    </div>
+//                 </div>
+//               </div>
+//             </div>
+
+//             {/* Chart Area */}
+//             <div className="p-6 min-h-[450px]">
+//               <IoTCharts
+//                 apiUrl={apiUrl}
+//                 deviceId={deviceId}
+//                 startTime={startTime}
+//                 endTime={endTime}
+//                 resolution={resolution}
+//                 selectedGroup={selectedGroup}
+//               />
+//             </div>
+//         </section>
+
+//         {/* 📥 SECTION 2: EXPORT */}
+//         <section className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
+//            <div className="flex flex-col md:flex-row items-center justify-between gap-6">
+//               <div className="max-w-lg">
+//                 <h3 className="text-lg font-bold text-slate-800 flex items-center gap-2">
+//                   <span className="bg-green-100 text-green-700 p-1.5 rounded-md">
+//                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+//                   </span>
+//                   Export Data (CSV)
+//                 </h3>
+//                 <p className="text-slate-500 text-sm mt-1">
+//                   Select a date range below to download the raw data logs for offline analysis.
+//                 </p>
+//               </div>
+
+//               <div className="flex flex-col sm:flex-row gap-4 items-end bg-slate-50 p-4 rounded-xl border border-slate-200 w-full md:w-auto">
+//                  <div className="flex gap-4 w-full sm:w-auto">
+//                     <div className="flex-1">
+//                       <label className="block mb-1 text-xs font-bold text-slate-500 uppercase">From</label>
+//                       <input
+//                         type="date"
+//                         value={csvStart}
+//                         onChange={(e) => setCsvStart(e.target.value)}
+//                         className="bg-white border border-slate-300 text-slate-700 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5"
+//                       />
+//                     </div>
+//                     <div className="flex-1">
+//                       <label className="block mb-1 text-xs font-bold text-slate-500 uppercase">To</label>
+//                       <input
+//                         type="date"
+//                         value={csvEnd}
+//                         onChange={(e) => setCsvEnd(e.target.value)}
+//                         className="bg-white border border-slate-300 text-slate-700 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5"
+//                       />
+//                     </div>
+//                  </div>
+                 
+//                  <DownloadCSVButton
+//                     apiUrl={apiUrl}
+//                     deviceId={deviceId}
+//                     startTime={csvStartTime}
+//                     endTime={csvEndTime}
+//                     resolution={csvResolution}
+//                   />
+//               </div>
+//            </div>
+//         </section>
+
+//       </main>
+
+//       {/* Global CSS for inputs */}
+//       <style>{`
+//         .input-field {
+//           @apply bg-white border border-slate-300 text-slate-700 text-sm rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 shadow-sm transition-all hover:border-blue-400 outline-none;
+//         }
+//       `}</style>
+//     </div>
+//   );
+// }
+
+// import React, { useState } from "react";
+// import IoTCharts from "./components/IoTChart";
+// import DownloadCSVButton from "./components/DownloadCSVButton";
+
+// /* ✅ Force IST date → epoch */
+// const istTime = (dateStr, isEnd = false) => {
+//   const t = isEnd ? "23:59:59" : "00:00:00";
+//   return new Date(`${dateStr}T${t}+05:30`).getTime();
+// };
+
+// export default function App() {
+//   const deviceId = "raspi_modbus_01";
+//   const apiUrl = "https://e2jxfl3rf2.execute-api.ap-south-1.amazonaws.com/GetIOTData";
+
+//   /* ----------- GRAPH RANGE ----------- */
+//   const yesterday = new Date(Date.now() - 86400000).toISOString().slice(0, 10);
+//   const [startDate, setStartDate] = useState(yesterday);
+//   const [endDate, setEndDate] = useState(yesterday);
+
+//   const startTime = istTime(startDate);
+//   const endTime = istTime(endDate, true);
+
+//   /* ----------- SETTINGS ----------- */
+//   const [selectedGroup, setSelectedGroup] = useState("voltage");
+//   const resolution = (endTime - startTime) <= 15 * 60 * 1000 ? "raw" : "1m";
+
+//   /* ----------- CSV RANGE ----------- */
+//   const [csvStart, setCsvStart] = useState(yesterday);
+//   const [csvEnd, setCsvEnd] = useState(yesterday);
+//   const csvStartTime = istTime(csvStart);
+//   const csvEndTime = istTime(csvEnd, true);
+
+//   return (
+//     <div className="min-h-screen bg-slate-50 font-sans text-slate-800">
+//       {/* 🟢 NAVBAR */}
+//       <nav className="bg-white border-b border-slate-200 sticky top-0 z-20 shadow-sm">
+//         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+//           <div className="flex justify-between h-16 items-center">
+//             <div className="flex items-center gap-3">
+//               <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center shadow-blue-200 shadow-lg">
+//                 <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
+//               </div>
+//               <h1 className="text-xl font-bold tracking-tight text-slate-900">
+//                 Guna Solar.<span className="text-blue-600">Monitoring</span>
+//               </h1>
+//             </div>
+//             <div className="text-xs font-medium text-slate-500 bg-slate-100 px-3 py-1 rounded-full border border-slate-200">
+//               {deviceId}
+//             </div>
+//           </div>
+//         </div>
+//       </nav>
+
+//       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+        
+//         {/* 📊 SECTION 1: VISUALIZATION */}
+//         <section className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+//             {/* Toolbar */}
+//             <div className="bg-slate-50/80 border-b border-slate-200 p-6">
+//               <div className="flex flex-col md:flex-row gap-6 items-end justify-between">
+//                 <div className="flex flex-wrap gap-4 w-full">
+//                     <div className="flex flex-col gap-1">
+//                       <label className="text-xs font-bold text-slate-500 uppercase">Start Date</label>
+//                       <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} className="input-field" />
+//                     </div>
+//                     <div className="flex flex-col gap-1">
+//                       <label className="text-xs font-bold text-slate-500 uppercase">End Date</label>
+//                       <input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} className="input-field" />
+//                     </div>
+//                     <div className="flex flex-col gap-1 flex-grow md:flex-grow-0">
+//                       <label className="text-xs font-bold text-slate-500 uppercase">Metric</label>
+//                       <select value={selectedGroup} onChange={(e) => setSelectedGroup(e.target.value)} className="input-field min-w-[220px]">
+//                         <optgroup label="Power Analysis">
+//                             <option value="power_total">📊 Total Power (Grid + Solar)</option>
+//                             <option value="inverter_1">☀️ Inverter 1 Power</option>
+//                             <option value="inverter_2">☀️ Inverter 2 Power</option>
+//                             <option value="power">🏭 Power (3-Phase)</option>
+//                             <option value="pf">📉 Power Factor</option>
+//                         </optgroup>
+//                         <optgroup label="Raw Electrical">
+//                             <option value="voltage">⚡ Voltage (V)</option>
+//                             <option value="current">🔌 Current (A)</option>
+//                             <option value="frequency">〰 Frequency (Hz)</option>
+//                             <option value="energy_daily">🔋 Daily Energy (kWh)</option>
+//                         </optgroup>
+//                       </select>
+//                     </div>
+//                 </div>
+//               </div>
+//             </div>
+
+//             {/* Chart Area */}
+//             <div className="p-6 min-h-[450px]">
+//               <IoTCharts
+//                 apiUrl={apiUrl}
+//                 deviceId={deviceId}
+//                 startTime={startTime}
+//                 endTime={endTime}
+//                 resolution={resolution}
+//                 selectedGroup={selectedGroup}
+//               />
+//             </div>
+//         </section>
+
+//         {/* 📥 SECTION 2: EXPORT */}
+//         <section className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
+//            <div className="flex flex-col md:flex-row items-center justify-between gap-6">
+//               <div className="max-w-lg">
+//                 <h3 className="text-lg font-bold text-slate-800 flex items-center gap-2">Export Data (CSV)</h3>
+//                 <p className="text-slate-500 text-sm mt-1">Select a date range below to download raw logs.</p>
+//               </div>
+//               <div className="flex flex-col sm:flex-row gap-4 items-end bg-slate-50 p-4 rounded-xl border border-slate-200 w-full md:w-auto">
+//                  <div className="flex gap-4 w-full sm:w-auto">
+//                     <div className="flex-1">
+//                       <label className="block mb-1 text-xs font-bold text-slate-500 uppercase">From</label>
+//                       <input type="date" value={csvStart} onChange={(e) => setCsvStart(e.target.value)} className="bg-white border border-slate-300 text-slate-700 text-sm rounded-lg block w-full p-2.5" />
+//                     </div>
+//                     <div className="flex-1">
+//                       <label className="block mb-1 text-xs font-bold text-slate-500 uppercase">To</label>
+//                       <input type="date" value={csvEnd} onChange={(e) => setCsvEnd(e.target.value)} className="bg-white border border-slate-300 text-slate-700 text-sm rounded-lg block w-full p-2.5" />
+//                     </div>
+//                  </div>
+//                  <DownloadCSVButton apiUrl={apiUrl} deviceId={deviceId} startTime={istTime(csvStart)} endTime={istTime(csvEnd, true)} />
+//               </div>
+//            </div>
+//         </section>
+
+//       </main>
+
+//       <style>{`
+//         .input-field {
+//           @apply bg-white border border-slate-300 text-slate-700 text-sm rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 shadow-sm transition-all hover:border-blue-400 outline-none;
+//         }
+//       `}</style>
+//     </div>
+//   );
+// }
+
+// import React, { useState } from "react";
+// import IoTCharts from "./components/IoTChart";
+// import DownloadCSVButton from "./components/DownloadCSVButton";
+
+// /* ✅ Force IST date → epoch */
+// const istTime = (dateStr, isEnd = false) => {
+//   const t = isEnd ? "23:59:59" : "00:00:00";
+//   return new Date(`${dateStr}T${t}+05:30`).getTime();
+// };
+
+// export default function App() {
+//   const deviceId = "raspi_modbus_01";
+//   const apiUrl = "https://e2jxfl3rf2.execute-api.ap-south-1.amazonaws.com/GetIOTData";
+
+//   /* ----------- GRAPH RANGE ----------- */
+//   const yesterday = new Date(Date.now() - 86400000).toISOString().slice(0, 10);
+//   const [startDate, setStartDate] = useState(yesterday);
+//   const [endDate, setEndDate] = useState(yesterday);
+
+//   const startTime = istTime(startDate);
+//   const endTime = istTime(endDate, true);
+
+//   /* ----------- SETTINGS ----------- */
+//   const [selectedGroup, setSelectedGroup] = useState("voltage");
+//   const resolution = (endTime - startTime) <= 15 * 60 * 1000 ? "raw" : "1m";
+
+//   /* ----------- CSV RANGE ----------- */
+//   const [csvStart, setCsvStart] = useState(yesterday);
+//   const [csvEnd, setCsvEnd] = useState(yesterday);
+//   const csvStartTime = istTime(csvStart);
+//   const csvEndTime = istTime(csvEnd, true);
+
+//   return (
+//     // ✨ UPDATE 1: New Gradient Background
+//     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-slate-50 to-blue-50 font-sans text-slate-800">
+      
+//       {/* 🟢 NAVBAR */}
+//       <nav className="bg-white/80 backdrop-blur-md border-b border-slate-200/60 sticky top-0 z-20 shadow-sm">
+//         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+           
+//            {/* LOGO & TITLE SECTION */}
+//            <div className="flex items-center gap-3">
+//               {/* ✅ LOGO ADDED HERE */}
+//               <img 
+//                 src="/gspl.jpg" 
+//                 alt="Guna Solar Logo" 
+//                 className="h-10 w-auto object-contain" 
+//               />
+              
+//               <h1 className="text-xl font-bold text-slate-900 tracking-tight hidden sm:block">
+//                 Guna Solar.<span className="text-blue-600">Monitoring</span>
+//               </h1>
+//            </div>
+
+//            <span className="text-xs bg-slate-100/80 px-3 py-1 rounded-full border border-slate-200 font-mono text-slate-500">
+//              {deviceId}
+//            </span>
+//         </div>
+//       </nav>
+
+//       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+        
+//         {/* 📊 SECTION 1: VISUALIZATION */}
+//         {/* ✨ UPDATE 2: Added shadow-lg to make it pop */}
+//         <section className="bg-white rounded-2xl shadow-lg border border-slate-200/60 overflow-hidden">
+//             {/* Toolbar */}
+//             <div className="bg-slate-50/50 border-b border-slate-200 p-6">
+//               <div className="flex flex-col md:flex-row gap-6 items-end justify-between">
+//                 <div className="flex flex-wrap gap-4 w-full">
+//                     <div className="flex flex-col gap-1">
+//                       <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Start Date</label>
+//                       <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} className="input-field" />
+//                     </div>
+//                     <div className="flex flex-col gap-1">
+//                       <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">End Date</label>
+//                       <input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} className="input-field" />
+//                     </div>
+//                     <div className="flex flex-col gap-1 flex-grow md:flex-grow-0">
+//                       <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Metric</label>
+//                       <select value={selectedGroup} onChange={(e) => setSelectedGroup(e.target.value)} className="input-field min-w-[240px]">
+//                         <optgroup label="Power Analysis">
+//                             <option value="power_total">📊 Total Power (Grid + Solar)</option>
+//                             <option value="inverter_1">☀️ Inverter 1 Power</option>
+//                             <option value="inverter_2">☀️ Inverter 2 Power</option>
+//                             <option value="power">🏭 Power (3-Phase)</option>
+//                             <option value="pf">📉 Power Factor</option>
+//                         </optgroup>
+//                         <optgroup label="Raw Electrical">
+//                             <option value="voltage">⚡ Voltage (V)</option>
+//                             <option value="current">🔌 Current (A)</option>
+//                             <option value="frequency">〰 Frequency (Hz)</option>
+//                             <option value="energy_daily">🔋 Daily Energy (kWh)</option>
+//                         </optgroup>
+//                       </select>
+//                     </div>
+//                 </div>
+//               </div>
+//             </div>
+
+//             {/* Chart Area */}
+//             <div className="p-6 min-h-[450px]">
+//               <IoTCharts
+//                 apiUrl={apiUrl}
+//                 deviceId={deviceId}
+//                 startTime={startTime}
+//                 endTime={endTime}
+//                 resolution={resolution}
+//                 selectedGroup={selectedGroup}
+//               />
+//             </div>
+//         </section>
+
+//         {/* 📥 SECTION 2: EXPORT */}
+//         {/* ✨ UPDATE 2: Added shadow-md */}
+//         <section className="bg-white rounded-2xl shadow-md border border-slate-200 p-6">
+//            <div className="flex flex-col md:flex-row items-center justify-between gap-6">
+//               <div className="max-w-lg">
+//                 <h3 className="text-lg font-bold text-slate-800 flex items-center gap-2">Export Data (CSV)</h3>
+//                 <p className="text-slate-500 text-sm mt-1">Select a date range below to download raw logs.</p>
+//               </div>
+//               <div className="flex flex-col sm:flex-row gap-4 items-end bg-slate-50 p-4 rounded-xl border border-slate-200 w-full md:w-auto">
+//                  <div className="flex gap-4 w-full sm:w-auto">
+//                     <div className="flex-1">
+//                       <label className="block mb-1 text-xs font-bold text-slate-500 uppercase tracking-wider">From</label>
+//                       <input type="date" value={csvStart} onChange={(e) => setCsvStart(e.target.value)} className="bg-white border border-slate-300 text-slate-700 text-sm rounded-lg block w-full p-2.5 focus:ring-blue-500 focus:border-blue-500" />
+//                     </div>
+//                     <div className="flex-1">
+//                       <label className="block mb-1 text-xs font-bold text-slate-500 uppercase tracking-wider">To</label>
+//                       <input type="date" value={csvEnd} onChange={(e) => setCsvEnd(e.target.value)} className="bg-white border border-slate-300 text-slate-700 text-sm rounded-lg block w-full p-2.5 focus:ring-blue-500 focus:border-blue-500" />
+//                     </div>
+//                  </div>
+//                  <DownloadCSVButton apiUrl={apiUrl} deviceId={deviceId} startTime={istTime(csvStart)} endTime={istTime(csvEnd, true)} />
+//               </div>
+//            </div>
+//         </section>
+
+//       </main>
+
+//       <style>{`
+//         .input-field {
+//           @apply bg-white border border-slate-300 text-slate-700 text-sm rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 shadow-sm transition-all hover:border-blue-400 outline-none;
+//         }
+//       `}</style>
+//     </div>
+//   );
+// }
+
 import React, { useState } from "react";
 import IoTCharts from "./components/IoTChart";
 import DownloadCSVButton from "./components/DownloadCSVButton";
@@ -890,83 +1344,84 @@ export default function App() {
   const apiUrl = "https://e2jxfl3rf2.execute-api.ap-south-1.amazonaws.com/GetIOTData";
 
   /* ----------- GRAPH RANGE ----------- */
-  const today = new Date().toISOString().slice(0, 10);
-  // Default to Yesterday to ensure full data visibility initially
   const yesterday = new Date(Date.now() - 86400000).toISOString().slice(0, 10);
-
   const [startDate, setStartDate] = useState(yesterday);
   const [endDate, setEndDate] = useState(yesterday);
 
   const startTime = istTime(startDate);
   const endTime = istTime(endDate, true);
 
-  /* ----------- GRAPH TYPE ----------- */
+  /* ----------- SETTINGS ----------- */
   const [selectedGroup, setSelectedGroup] = useState("voltage");
-
-  /* ----------- RESOLUTION ----------- */
-  const getResolution = (s, e) => (e - s <= 15 * 60 * 1000 ? "raw" : "1m");
-  const resolution = getResolution(startTime, endTime);
+  const resolution = (endTime - startTime) <= 15 * 60 * 1000 ? "raw" : "1m";
 
   /* ----------- CSV RANGE ----------- */
   const [csvStart, setCsvStart] = useState(yesterday);
   const [csvEnd, setCsvEnd] = useState(yesterday);
-
   const csvStartTime = istTime(csvStart);
   const csvEndTime = istTime(csvEnd, true);
-  const csvResolution = getResolution(csvStartTime, csvEndTime);
 
   return (
-    <div className="min-h-screen bg-slate-50 font-sans text-slate-800">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-slate-50 to-blue-50 font-sans text-slate-800">
+      
       {/* 🟢 NAVBAR */}
-      <nav className="bg-white border-b border-slate-200 sticky top-0 z-20 shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between h-16 items-center">
-            <div className="flex items-center gap-3">
-              <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center shadow-blue-200 shadow-lg">
-                <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
-              </div>
-              <h1 className="text-xl font-bold tracking-tight text-slate-900">
-                Ruhrpumpen <span className="text-blue-600">IoT</span>
+      <nav className="bg-white/80 backdrop-blur-md border-b border-slate-200/60 sticky top-0 z-20 shadow-sm">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
+           
+           {/* LOGO & TITLE SECTION */}
+           <div className="flex items-center gap-4">
+              {/* ✅ UPDATED: Changed h-10 to h-14 for a bigger logo */}
+              <img 
+                src="/gspl.jpg" 
+                alt="Guna Solar Logo" 
+                className="h-21 w-auto object-contain" 
+              />
+              
+              <h1 className="text-xl font-bold text-slate-900 tracking-tight hidden sm:block">
+                Guna Solar.<span className="text-blue-600">Monitoring</span>
               </h1>
-            </div>
-            <div className="text-xs font-medium text-slate-500 bg-slate-100 px-3 py-1 rounded-full border border-slate-200">
-              {deviceId}
-            </div>
-          </div>
+           </div>
+
+           <span className="text-xs bg-slate-100/80 px-3 py-1 rounded-full border border-slate-200 font-mono text-slate-500">
+             {deviceId}
+           </span>
         </div>
       </nav>
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
         
         {/* 📊 SECTION 1: VISUALIZATION */}
-        <section className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+        <section className="bg-white rounded-2xl shadow-lg border border-slate-200/60 overflow-hidden">
             {/* Toolbar */}
-            <div className="bg-slate-50/80 border-b border-slate-200 p-6">
+            <div className="bg-slate-50/50 border-b border-slate-200 p-6">
               <div className="flex flex-col md:flex-row gap-6 items-end justify-between">
                 <div className="flex flex-wrap gap-4 w-full">
-                   <div className="flex flex-col gap-1">
-                      <label className="text-xs font-bold text-slate-500 uppercase">Start Date</label>
+                    <div className="flex flex-col gap-1">
+                      <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Start Date</label>
                       <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} className="input-field" />
-                   </div>
-                   <div className="flex flex-col gap-1">
-                      <label className="text-xs font-bold text-slate-500 uppercase">End Date</label>
+                    </div>
+                    <div className="flex flex-col gap-1">
+                      <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">End Date</label>
                       <input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} className="input-field" />
-                   </div>
-                   <div className="flex flex-col gap-1 flex-grow md:flex-grow-0">
-                      <label className="text-xs font-bold text-slate-500 uppercase">Metric</label>
-                      <select value={selectedGroup} onChange={(e) => setSelectedGroup(e.target.value)} className="input-field min-w-[220px]">
-                        <option value="voltage">⚡ Voltage (V)</option>
-                        <option value="current">🔌 Current (A)</option>
-                        <option value="power">🏭 Power (3-Phase)</option>
-                        <option value="power_total">📊 Total Power</option>
-                        <option value="pf">📉 Power Factor</option>
-                        <option value='pf_total'>📉 PF Total</option>
-                        <option value="frequency">〰 Frequency (Hz)</option>
-                        
-                        {/* ✅ NEW OPTION FOR ENERGY */}
-                        <option value="energy_daily">🔋 Daily Energy (kWh)</option>
+                    </div>
+                    <div className="flex flex-col gap-1 flex-grow md:flex-grow-0">
+                      <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Metric</label>
+                      <select value={selectedGroup} onChange={(e) => setSelectedGroup(e.target.value)} className="input-field min-w-[240px]">
+                        <optgroup label="Power Analysis">
+                            <option value="power_total">📊 Total Power (Grid + Solar)</option>
+                            <option value="inverter_1">☀️ Inverter 1 Power</option>
+                            <option value="inverter_2">☀️ Inverter 2 Power</option>
+                            <option value="power">🏭 Power (3-Phase)</option>
+                            <option value="pf">📉 Power Factor</option>
+                        </optgroup>
+                        <optgroup label="Raw Electrical">
+                            <option value="voltage">⚡ Voltage (V)</option>
+                            <option value="current">🔌 Current (A)</option>
+                            <option value="frequency">〰 Frequency (Hz)</option>
+                            <option value="energy_daily">🔋 Daily Energy (kWh)</option>
+                        </optgroup>
                       </select>
-                   </div>
+                    </div>
                 </div>
               </div>
             </div>
@@ -985,56 +1440,30 @@ export default function App() {
         </section>
 
         {/* 📥 SECTION 2: EXPORT */}
-        <section className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
+        <section className="bg-white rounded-2xl shadow-md border border-slate-200 p-6">
            <div className="flex flex-col md:flex-row items-center justify-between gap-6">
               <div className="max-w-lg">
-                <h3 className="text-lg font-bold text-slate-800 flex items-center gap-2">
-                  <span className="bg-green-100 text-green-700 p-1.5 rounded-md">
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
-                  </span>
-                  Export Data (CSV)
-                </h3>
-                <p className="text-slate-500 text-sm mt-1">
-                  Select a date range below to download the raw data logs for offline analysis.
-                </p>
+                <h3 className="text-lg font-bold text-slate-800 flex items-center gap-2">Export Data (CSV)</h3>
+                <p className="text-slate-500 text-sm mt-1">Select a date range below to download raw logs.</p>
               </div>
-
               <div className="flex flex-col sm:flex-row gap-4 items-end bg-slate-50 p-4 rounded-xl border border-slate-200 w-full md:w-auto">
                  <div className="flex gap-4 w-full sm:w-auto">
                     <div className="flex-1">
-                      <label className="block mb-1 text-xs font-bold text-slate-500 uppercase">From</label>
-                      <input
-                        type="date"
-                        value={csvStart}
-                        onChange={(e) => setCsvStart(e.target.value)}
-                        className="bg-white border border-slate-300 text-slate-700 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5"
-                      />
+                      <label className="block mb-1 text-xs font-bold text-slate-500 uppercase tracking-wider">From</label>
+                      <input type="date" value={csvStart} onChange={(e) => setCsvStart(e.target.value)} className="bg-white border border-slate-300 text-slate-700 text-sm rounded-lg block w-full p-2.5 focus:ring-blue-500 focus:border-blue-500" />
                     </div>
                     <div className="flex-1">
-                      <label className="block mb-1 text-xs font-bold text-slate-500 uppercase">To</label>
-                      <input
-                        type="date"
-                        value={csvEnd}
-                        onChange={(e) => setCsvEnd(e.target.value)}
-                        className="bg-white border border-slate-300 text-slate-700 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5"
-                      />
+                      <label className="block mb-1 text-xs font-bold text-slate-500 uppercase tracking-wider">To</label>
+                      <input type="date" value={csvEnd} onChange={(e) => setCsvEnd(e.target.value)} className="bg-white border border-slate-300 text-slate-700 text-sm rounded-lg block w-full p-2.5 focus:ring-blue-500 focus:border-blue-500" />
                     </div>
                  </div>
-                 
-                 <DownloadCSVButton
-                    apiUrl={apiUrl}
-                    deviceId={deviceId}
-                    startTime={csvStartTime}
-                    endTime={csvEndTime}
-                    resolution={csvResolution}
-                  />
+                 <DownloadCSVButton apiUrl={apiUrl} deviceId={deviceId} startTime={istTime(csvStart)} endTime={istTime(csvEnd, true)} />
               </div>
            </div>
         </section>
 
       </main>
 
-      {/* Global CSS for inputs */}
       <style>{`
         .input-field {
           @apply bg-white border border-slate-300 text-slate-700 text-sm rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 shadow-sm transition-all hover:border-blue-400 outline-none;
