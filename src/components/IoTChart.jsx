@@ -747,6 +747,226 @@
 //   );
 // }
 
+// import React, { useEffect, useState } from "react";
+// import {
+//   LineChart,
+//   Line,
+//   XAxis,
+//   YAxis,
+//   CartesianGrid,
+//   Tooltip,
+//   Legend,
+//   ResponsiveContainer
+// } from "recharts";
+
+// /* --- 🎨 COLORS --- */
+// const COLORS = ["#3b82f6", "#ef4444", "#22c55e", "#f59e0b"];
+// const COL_GRID = "#0f172a";   // Black
+// const COL_SOLAR = "#f97316";  // Orange
+// const COL_NET = "#8b5cf6";    // Purple
+// const COL_INV1 = "#d946ef";   // Fuchsia
+// const COL_INV2 = "#06b6d4";   // Cyan
+
+// /* --- 🕒 HELPER: Format Time --- */
+// const formatXAxis = (tickTime) => {
+//   const date = new Date(tickTime);
+//   return date.toLocaleTimeString("en-IN", {
+//     hour: "2-digit",
+//     minute: "2-digit",
+//     hour12: false,
+//     timeZone: "Asia/Kolkata",
+//   });
+// };
+
+// /* --- 🛠 HELPER: Custom Tooltip --- */
+// const CustomTooltip = ({ active, payload, label }) => {
+//   if (active && payload && payload.length) {
+//     return (
+//       <div className="bg-slate-800 text-white p-3 rounded shadow-lg border border-slate-700 text-sm z-50">
+//         <p className="font-bold mb-2 border-b border-slate-600 pb-1 text-slate-300">
+//           {new Date(label).toLocaleString("en-IN", {
+//             timeZone: "Asia/Kolkata",
+//             month: "short",
+//             day: "numeric",
+//             hour: "2-digit",
+//             minute: "2-digit",
+//           })}
+//         </p>
+//         {payload.map((entry, index) => (
+//           <div key={index} className="flex items-center gap-2 mb-1">
+//             <div
+//               className="w-3 h-3 rounded-full"
+//               style={{ backgroundColor: entry.color }}
+//             ></div>
+//             <span className="text-slate-400 capitalize">
+//               {entry.name}:
+//             </span>
+//             <span className="font-mono font-semibold text-white">
+//               {Number(entry.value).toFixed(3)}
+//             </span>
+//           </div>
+//         ))}
+//       </div>
+//     );
+//   }
+//   return null;
+// };
+
+// export default function IoTCharts({
+//   apiUrl,
+//   deviceId,
+//   startTime,
+//   endTime,
+//   resolution,
+//   selectedGroup,
+// }) {
+//   const [data, setData] = useState([]);
+
+//   useEffect(() => {
+//     const fetchData = async () => {
+//       setData([]);
+//       const params = new URLSearchParams({ deviceId, startTime, endTime, resolution });
+
+//       try {
+//         const res = await fetch(`${apiUrl}?${params.toString()}`);
+//         const json = await res.json();
+//         const items = json.items || [];
+//         items.sort((a, b) => Number(a.timestamp) - Number(b.timestamp));
+
+//         // --- 🟢 DATA PROCESSING ---
+//         let currentDay = null;
+//         let baselineInto = 0;
+//         let baselineOut = 0;
+
+//         const formatted = items.map((row) => {
+//           const ts = Number(row.timestamp);
+//           const payload = row.payload || {};
+//           const dayStr = new Date(ts).toLocaleDateString("en-CA", { timeZone: "Asia/Kolkata" });
+          
+//           // 1. Daily Energy
+//           const rawInto = Number(payload.Energy_Into || 0);
+//           const rawOut = Number(payload.Energy_Out || 0);
+          
+//           if (dayStr !== currentDay) {
+//             currentDay = dayStr;
+//             baselineInto = rawInto;
+//             baselineOut = rawOut;
+//           }
+//           const diffInto = Math.max(0, rawInto - baselineInto);
+//           const diffOut = Math.max(0, rawOut - baselineOut);
+
+//           // 2. Power Processing (Watts -> kW)
+//           const gridKw = Number(payload.Power_Total || 0);
+//           const inv1 = Number(payload.inverter_power_w || 0);
+//           const inv2 = Number(payload.inverter_2_power_w || 0);
+          
+//           const inv1Kw = inv1 / 1000;
+//           const inv2Kw = inv2 / 1000;
+//           const totalInvKw = inv1Kw + inv2Kw;
+//           const consumptionKw = gridKw + totalInvKw;
+
+//           // ✅ FIX: Wrap .toFixed() in Number() so graph scales correctly
+//           return {
+//             ...payload,
+//             timestamp: ts,
+            
+//             // Calculated Fields (as Numbers)
+//             daily_import_kwh: Number((diffInto / 1000).toFixed(3)), 
+//             daily_export_kwh: Number((diffOut / 1000).toFixed(3)),
+//             inverter_kw: Number(totalInvKw.toFixed(3)),
+//             inv1_kw: Number(inv1Kw.toFixed(3)), 
+//             inv2_kw: Number(inv2Kw.toFixed(3)), 
+//             consumption_kw: Number(consumptionKw.toFixed(3)),
+//           };
+//         });
+
+//         setData(formatted);
+//       } catch (err) {
+//         console.error("Error fetching data:", err);
+//       }
+//     };
+
+//     fetchData();
+//   }, [apiUrl, deviceId, startTime, endTime, resolution]);
+
+//   if (!data.length) return <div className="text-center p-10 text-gray-400">No data available</div>;
+
+//   // --- 📊 CHART CONFIGURATION ---
+//   const groups = {
+//     voltage: ["V_A_N", "V_B_N", "V_C_N"],
+//     current: ["I_A", "I_B", "I_C"],
+//     power_total: ["Power_Total", "inverter_kw", "consumption_kw"], 
+//     inverter_1: ["inv1_kw"],
+//     inverter_2: ["inv2_kw"],
+//     power: ["Power_A", "Power_B", "Power_C"],
+//     pf: ["PF_Total"],
+//     frequency: ["Frequency"],
+//     energy_daily: ["daily_import_kwh", "daily_export_kwh"],
+//   };
+
+//   const currentLines = groups[selectedGroup] || ["Power_Total"];
+
+//   return (
+//     <div className="bg-white p-1 rounded-lg"> 
+//       <ResponsiveContainer width="100%" height={400}>
+//         <LineChart data={data} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
+//           <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
+          
+//           <XAxis 
+//             dataKey="timestamp" 
+//             tickFormatter={formatXAxis} 
+//             type="number" 
+//             scale="time" 
+//             domain={['auto', 'auto']} 
+//             tick={{ fontSize: 12, fill: "#64748b" }} 
+//             minTickGap={60} 
+//           />
+          
+//           {/* ✅ FIXED: domain={['auto', 'auto']} enables auto-scaling */}
+//           <YAxis 
+//             tick={{ fontSize: 12, fill: "#64748b" }} 
+//             domain={['auto', 'auto']}
+//           />
+          
+//           <Tooltip content={<CustomTooltip />} />
+//           <Legend wrapperStyle={{ paddingTop: "20px" }} />
+
+//           {currentLines.map((key, index) => {
+//             let strokeColor = COLORS[index % COLORS.length];
+//             let name = key.replace(/_/g, " ");
+//             let dashArray = "";
+
+//             // --- 🎨 Custom Styles ---
+//             if (key === "Power_Total") { strokeColor = COL_GRID; name = "Grid Power (Meter)"; }
+//             if (key === "inverter_kw") { strokeColor = COL_SOLAR; name = "Total Solar Power"; }
+//             if (key === "consumption_kw") { strokeColor = COL_NET; name = "Net Power"; dashArray = "5 5"; }
+            
+//             if (key === "inv1_kw") { strokeColor = COL_INV1; name = "Inverter 1 Power"; }
+//             if (key === "inv2_kw") { strokeColor = COL_INV2; name = "Inverter 2 Power"; }
+
+//             if (key.includes("daily_import")) name = "Today's Import (kWh)";
+//             if (key.includes("daily_export")) name = "Today's Export (kWh)";
+
+//             return (
+//                 <Line
+//                   key={key}
+//                   type="monotone"
+//                   dataKey={key}
+//                   name={name}
+//                   stroke={strokeColor}
+//                   strokeWidth={2}
+//                   strokeDasharray={dashArray}
+//                   dot={false}
+//                   activeDot={{ r: 6 }}
+//                 />
+//             );
+//           })}
+//         </LineChart>
+//       </ResponsiveContainer>
+//     </div>
+//   );
+// }
+
 import React, { useEffect, useState } from "react";
 import {
   LineChart,
@@ -761,11 +981,11 @@ import {
 
 /* --- 🎨 COLORS --- */
 const COLORS = ["#3b82f6", "#ef4444", "#22c55e", "#f59e0b"];
-const COL_GRID = "#0f172a";   // Black
-const COL_SOLAR = "#f97316";  // Orange
-const COL_NET = "#8b5cf6";    // Purple
-const COL_INV1 = "#d946ef";   // Fuchsia
-const COL_INV2 = "#06b6d4";   // Cyan
+const COL_GRID = "#0f172a";   // Black (Grid)
+const COL_SOLAR = "#f97316";  // Orange (Solar)
+const COL_NET = "#8b5cf6";    // Purple (Net)
+const COL_INV1 = "#d946ef";   // Fuchsia (Inv 1)
+const COL_INV2 = "#06b6d4";   // Cyan (Inv 2)
 
 /* --- 🕒 HELPER: Format Time --- */
 const formatXAxis = (tickTime) => {
@@ -843,7 +1063,7 @@ export default function IoTCharts({
           const payload = row.payload || {};
           const dayStr = new Date(ts).toLocaleDateString("en-CA", { timeZone: "Asia/Kolkata" });
           
-          // 1. Daily Energy
+          // 1. Daily Energy Logic
           const rawInto = Number(payload.Energy_Into || 0);
           const rawOut = Number(payload.Energy_Out || 0);
           
@@ -855,28 +1075,48 @@ export default function IoTCharts({
           const diffInto = Math.max(0, rawInto - baselineInto);
           const diffOut = Math.max(0, rawOut - baselineOut);
 
-          // 2. Power Processing (Watts -> kW)
+          // 2. Power Processing
+          
+          // Grid Power: Use Power_Total directly as it is available
+          // If missing, default to 0
           const gridKw = Number(payload.Power_Total || 0);
-          const inv1 = Number(payload.inverter_power_w || 0);
-          const inv2 = Number(payload.inverter_2_power_w || 0);
+
+          // Inverters (Watts -> kW)
+          // ✅ FIX: Updated to match your JSON keys exactly
+          const inv1 = Number(payload.inverter1_power_w || 0); 
+          const inv2 = Number(payload.inverter2_power_w || 0);
           
           const inv1Kw = inv1 / 1000;
           const inv2Kw = inv2 / 1000;
           const totalInvKw = inv1Kw + inv2Kw;
+
+          // Net Consumption (Grid + Solar)
           const consumptionKw = gridKw + totalInvKw;
 
-          // ✅ FIX: Wrap .toFixed() in Number() so graph scales correctly
+          // Phase Powers (Fallback to 0 if missing)
+          const pA = Number(payload.Power_A || 0);
+          const pB = Number(payload.Power_B || 0);
+          const pC = Number(payload.Power_C || 0);
+
           return {
             ...payload,
             timestamp: ts,
             
-            // Calculated Fields (as Numbers)
+            // Calculated Fields (Numbers for Auto-Scaling)
             daily_import_kwh: Number((diffInto / 1000).toFixed(3)), 
             daily_export_kwh: Number((diffOut / 1000).toFixed(3)),
+            
+            // Power Data
+            Power_Total: Number(gridKw.toFixed(3)), 
             inverter_kw: Number(totalInvKw.toFixed(3)),
             inv1_kw: Number(inv1Kw.toFixed(3)), 
             inv2_kw: Number(inv2Kw.toFixed(3)), 
             consumption_kw: Number(consumptionKw.toFixed(3)),
+
+            // Phase Data
+            Power_A: Number(pA.toFixed(3)),
+            Power_B: Number(pB.toFixed(3)),
+            Power_C: Number(pC.toFixed(3)),
           };
         });
 
@@ -895,10 +1135,17 @@ export default function IoTCharts({
   const groups = {
     voltage: ["V_A_N", "V_B_N", "V_C_N"],
     current: ["I_A", "I_B", "I_C"],
+    
+    // The "Total Power" graph uses these keys
     power_total: ["Power_Total", "inverter_kw", "consumption_kw"], 
+    
     inverter_1: ["inv1_kw"],
     inverter_2: ["inv2_kw"],
+    
+    // If Power_A/B/C are missing, this might be empty, 
+    // but we updated the fallback logic to default to 0 so it won't crash.
     power: ["Power_A", "Power_B", "Power_C"],
+    
     pf: ["PF_Total"],
     frequency: ["Frequency"],
     energy_daily: ["daily_import_kwh", "daily_export_kwh"],
@@ -922,7 +1169,6 @@ export default function IoTCharts({
             minTickGap={60} 
           />
           
-          {/* ✅ FIXED: domain={['auto', 'auto']} enables auto-scaling */}
           <YAxis 
             tick={{ fontSize: 12, fill: "#64748b" }} 
             domain={['auto', 'auto']}
